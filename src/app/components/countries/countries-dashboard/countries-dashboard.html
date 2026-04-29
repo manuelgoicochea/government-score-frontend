@@ -1,0 +1,262 @@
+<div class="fade-in mt-4 flex flex-col gap-6">
+
+  <!-- ── Header ───────────────────────────────────────── -->
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h2 class="text-white font-bold text-xl">🌎 Latin America Dashboard</h2>
+      @if (lastSync?.last_sync) {
+        <p class="text-[#7b82a0] text-xs mt-1">
+          🔄 Last synchronized with World Bank:
+          <span class="text-[#6366f1] font-semibold">{{ formatSync(lastSync!.last_sync) }}</span>
+          · {{ lastSync!.countries_updated }} countries updated
+          <span class="ml-1 px-2 py-0.5 rounded-full text-xs"
+            [class]="lastSync!.status === 'success'
+              ? 'bg-green-500/10 text-green-400'
+              : 'bg-yellow-500/10 text-yellow-400'">
+            {{ lastSync!.status }}
+          </span>
+        </p>
+      } @else {
+        <p class="text-yellow-400 text-xs mt-1">⚠️ No synchronization recorded yet</p>
+      }
+    </div>
+  </div>
+
+  <!-- ── Error ────────────────────────────────────────── -->
+  @if (error) {
+    <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
+      ⚠️ {{ error }}
+    </div>
+  }
+
+  <!-- ── Loading ──────────────────────────────────────── -->
+  @if (loading) {
+    <div class="flex flex-col items-center justify-center py-20 gap-4">
+      <div class="w-12 h-12 border-4 border-[#6366f1] border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-[#7b82a0]">Loading countries from database...</p>
+    </div>
+  }
+
+  @if (!loading && countries.length) {
+
+    <!-- ── Stats cards ─────────────────────────────────── -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div class="bg-[#1a1d27] border border-[#2e3350] rounded-xl p-4 text-center">
+        <div class="text-2xl font-extrabold text-[#6366f1]">{{ avgScore }}</div>
+        <div class="text-[#7b82a0] text-xs mt-1">Avg Score</div>
+      </div>
+      <div class="bg-[#1a1d27] border border-[#2e3350] rounded-xl p-4 text-center">
+        <div class="text-2xl">{{ bestCountry?.flag }}</div>
+        <div class="text-white text-xs font-semibold mt-1">{{ bestCountry?.name }}</div>
+        <div class="text-green-400 text-xs">Best {{ bestCountry?.score }}/100</div>
+      </div>
+      <div class="bg-[#1a1d27] border border-[#2e3350] rounded-xl p-4 text-center">
+        <div class="text-2xl">{{ worstCountry?.flag }}</div>
+        <div class="text-white text-xs font-semibold mt-1">{{ worstCountry?.name }}</div>
+        <div class="text-red-400 text-xs">Lowest {{ worstCountry?.score }}/100</div>
+      </div>
+      <div class="bg-[#1a1d27] border border-green-500/20 rounded-xl p-4 text-center">
+        <div class="text-2xl font-extrabold text-green-400">{{ goodCount }}</div>
+        <div class="text-[#7b82a0] text-xs mt-1">Good</div>
+      </div>
+      <div class="bg-[#1a1d27] border border-yellow-500/20 rounded-xl p-4 text-center">
+        <div class="text-2xl font-extrabold text-yellow-400">{{ modCount }}</div>
+        <div class="text-[#7b82a0] text-xs mt-1">Moderate</div>
+      </div>
+      <div class="bg-[#1a1d27] border border-red-500/20 rounded-xl p-4 text-center">
+        <div class="text-2xl font-extrabold text-red-400">{{ critCount }}</div>
+        <div class="text-[#7b82a0] text-xs mt-1">Critical</div>
+      </div>
+    </div>
+
+    <!-- ── Score bars ──────────────────────────────────── -->
+    <div class="bg-[#1a1d27] border border-[#2e3350] rounded-2xl p-6">
+      <h3 class="text-[#7b82a0] text-xs font-semibold uppercase tracking-wider mb-4">Score Overview</h3>
+      <div class="flex flex-col gap-3">
+        @for (c of filtered; track c.code) {
+          <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            (click)="selectCountry(c)">
+            <span class="text-xl w-8 text-center">{{ c.flag }}</span>
+            <span class="text-white text-sm w-24 truncate">{{ c.name }}</span>
+            <div class="flex-1 h-5 bg-[#22263a] rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-700 flex items-center justify-end pr-2"
+                [style.width.%]="c.score"
+                [style.background]="classColor(c.classification)">
+                <span class="text-white text-xs font-bold">{{ c.score }}</span>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold w-20 text-center"
+              [class]="classBadge(c.classification)">
+              {{ c.classification }}
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ── Table + Detail ──────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Table -->
+      <div class="lg:col-span-2 bg-[#1a1d27] border border-[#2e3350] rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-[#2e3350] flex flex-wrap gap-3 items-center justify-between">
+          <input [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()"
+            placeholder="🔍 Search country..."
+            class="bg-[#22263a] border border-[#2e3350] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#6366f1] w-48"/>
+          <div class="flex gap-2">
+            <button (click)="toggleSort('score')"
+              class="px-3 py-1.5 text-xs rounded-lg border transition-all"
+              [class]="sortBy==='score' ? 'bg-[#6366f1] text-white border-[#6366f1]' : 'text-[#7b82a0] border-[#2e3350] hover:border-[#6366f1]'">
+              Score {{ sortBy==='score' ? (sortDir==='desc'?'↓':'↑') : '' }}
+            </button>
+            <button (click)="toggleSort('name')"
+              class="px-3 py-1.5 text-xs rounded-lg border transition-all"
+              [class]="sortBy==='name' ? 'bg-[#6366f1] text-white border-[#6366f1]' : 'text-[#7b82a0] border-[#2e3350] hover:border-[#6366f1]'">
+              Name {{ sortBy==='name' ? (sortDir==='asc'?'↑':'↓') : '' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-[#7b82a0] text-xs uppercase tracking-wider border-b border-[#2e3350]">
+                <th class="px-4 py-3 text-left">Country</th>
+                <th class="px-4 py-3 text-center">Score</th>
+                <th class="px-4 py-3 text-center">Class.</th>
+                <th class="px-4 py-3 text-center">Economy</th>
+                <th class="px-4 py-3 text-center">Effic.</th>
+                <th class="px-4 py-3 text-center">Transp.</th>
+                <th class="px-4 py-3 text-center">Trust</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of filtered; track c.code) {
+                <tr (click)="selectCountry(c)"
+                  class="border-b border-[#2e3350] cursor-pointer transition-all hover:bg-[#22263a]"
+                  [class.bg-indigo-500/10]="selected?.code === c.code">
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg">{{ c.flag }}</span>
+                      <span class="text-white font-medium">{{ c.name }}</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-center font-extrabold text-lg"
+                    [style.color]="classColor(c.classification)">{{ c.score }}</td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                      [class]="classBadge(c.classification)">{{ c.classification }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-center text-blue-400">{{ c.breakdown.economy }}</td>
+                  <td class="px-4 py-3 text-center text-purple-400">{{ c.breakdown.efficiency }}</td>
+                  <td class="px-4 py-3 text-center text-yellow-400">{{ c.breakdown.transparency }}</td>
+                  <td class="px-4 py-3 text-center text-green-400">{{ c.breakdown.trust }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detail Panel -->
+      <div class="bg-[#1a1d27] border border-[#2e3350] rounded-2xl p-6">
+        @if (selected) {
+          <div class="fade-in flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+              <span class="text-4xl">{{ selected.flag }}</span>
+              <div>
+                <h3 class="text-white font-bold text-lg">{{ selected.name }}</h3>
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                  [class]="classBadge(selected.classification)">{{ selected.classification }}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-center py-4 rounded-xl"
+              [style.background]="classColor(selected.classification) + '15'">
+              <span class="text-6xl font-extrabold" [style.color]="classColor(selected.classification)">
+                {{ selected.score }}
+              </span>
+              <span class="text-[#7b82a0] text-lg ml-1">/100</span>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              @for (item of breakdownEntries(selected.breakdown); track item.key) {
+                <div>
+                  <div class="flex justify-between text-xs mb-1">
+                    <span class="text-[#7b82a0]">{{ item.label }}</span>
+                    <span class="text-white font-semibold">{{ item.value }}/100</span>
+                  </div>
+                  <div class="h-2 bg-[#22263a] rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500"
+                      [style.width.%]="item.value"
+                      [style.background]="barColor(item.key)"></div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Raw data -->
+            <div class="border-t border-[#2e3350] pt-4">
+              <p class="text-[#7b82a0] text-xs font-semibold uppercase tracking-wider mb-3">
+                Raw Data ({{ selected.raw_data.year }})
+              </p>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-[#22263a] rounded-lg p-2">
+                  <div class="text-[#7b82a0]">Inflation</div>
+                  <div class="text-white font-bold">{{ selected.raw_data.inflation_rate | number:'1.2-2' }}%</div>
+                </div>
+                <div class="bg-[#22263a] rounded-lg p-2">
+                  <div class="text-[#7b82a0]">Unemployment</div>
+                  <div class="text-white font-bold">{{ selected.raw_data.unemployment_rate | number:'1.2-2' }}%</div>
+                </div>
+                <div class="bg-[#22263a] rounded-lg p-2">
+                  <div class="text-[#7b82a0]">GDP Growth</div>
+                  <div class="text-white font-bold">{{ selected.raw_data.gdp_growth | number:'1.2-2' }}%</div>
+                </div>
+                <div class="bg-[#22263a] rounded-lg p-2">
+                  <div class="text-[#7b82a0]">Budget Exec.</div>
+                  <div class="text-white font-bold">{{ selected.raw_data.budget_execution | number:'1.1-1' }}%</div>
+                </div>
+                <div class="bg-[#22263a] rounded-lg p-2">
+                  <div class="text-[#7b82a0]">Corruption Risk</div>
+                  <div class="text-white font-bold">{{ selected.raw_data.corruption_risk_index | number:'1.1-1' }}/100</div>
+                </div>
+                <div class="bg-[#22263a] rounded-lg p-2">
+                  <div class="text-[#7b82a0]">Public Trust</div>
+                  <div class="text-white font-bold">{{ selected.raw_data.public_trust | number:'1.1-1' }}/100</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sources -->
+            <div class="border-t border-[#2e3350] pt-3">
+              <p class="text-[#7b82a0] text-xs font-semibold uppercase tracking-wider mb-2">Sources</p>
+              <div class="flex flex-col gap-1 text-xs">
+                <div><span class="text-[#7b82a0]">Inflation, Unemployment & GDP: </span><span class="text-[#6366f1]">World Bank API</span></div>
+                <div><span class="text-[#7b82a0]">Corruption Risk: </span><span class="text-[#6366f1]">Transparency International CPI</span></div>
+                <div><span class="text-[#7b82a0]">Public Trust: </span><span class="text-[#6366f1]">Latinobarometro 2023</span></div>
+                <div><span class="text-[#7b82a0]">Budget Execution: </span><span class="text-[#6366f1]">CEPAL / National Reports</span></div>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="flex flex-col items-center justify-center h-full gap-3 text-center py-16">
+            <span class="text-5xl">🌎</span>
+            <p class="text-white font-semibold">Select a country</p>
+            <p class="text-[#7b82a0] text-sm">Click any row to see the full detail</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading && !error && countries.length === 0) {
+    <div class="flex flex-col items-center justify-center py-20 gap-3 text-center">
+      <span class="text-5xl">🏛</span>
+      <p class="text-white font-semibold">No data available</p>
+      <p class="text-[#7b82a0] text-sm">The admin needs to run a data refresh first.</p>
+    </div>
+  }
+
+</div>

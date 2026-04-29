@@ -1,0 +1,280 @@
+<div class="fade-in grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+
+  <!-- ══════════════════════════════════════════
+       COLUMNA 1 — Indicadores
+  ══════════════════════════════════════════ -->
+  <div class="bg-[#1a1d27] border border-[#2e3350] rounded-2xl p-6 flex flex-col gap-4">
+    <h2 class="text-white font-bold text-base mb-2">📊 Indicators</h2>
+
+    <!-- Inflation -->
+    <div>
+      <label class="text-[#7b82a0] text-xs mb-1 block">Inflation Rate (%) <span class="text-red-400">↑ lower is better</span></label>
+      <input type="number" [(ngModel)]="input.inflation_rate" step="0.1" min="0" max="100"
+        class="w-full bg-[#22263a] border border-[#2e3350] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#6366f1]"/>
+    </div>
+
+    <!-- Unemployment -->
+    <div>
+      <label class="text-[#7b82a0] text-xs mb-1 block">Unemployment Rate (%) <span class="text-red-400">↑ lower is better</span></label>
+      <input type="number" [(ngModel)]="input.unemployment_rate" step="0.1" min="0" max="100"
+        class="w-full bg-[#22263a] border border-[#2e3350] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#6366f1]"/>
+    </div>
+
+    <!-- GDP -->
+    <div>
+      <label class="text-[#7b82a0] text-xs mb-1 block">GDP Growth (%) <span class="text-green-400">↑ higher is better</span></label>
+      <input type="number" [(ngModel)]="input.gdp_growth" step="0.1" min="-20" max="30"
+        class="w-full bg-[#22263a] border border-[#2e3350] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#6366f1]"/>
+    </div>
+
+    <!-- Budget -->
+    <div>
+      <label class="text-[#7b82a0] text-xs mb-1 block">Budget Execution (%) <span class="text-green-400">↑ higher is better</span></label>
+      <input type="number" [(ngModel)]="input.budget_execution" step="0.1" min="0" max="100"
+        class="w-full bg-[#22263a] border border-[#2e3350] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#6366f1]"/>
+    </div>
+
+    <!-- Corruption -->
+    <div>
+      <label class="text-[#7b82a0] text-xs mb-1 block">Corruption Risk (0–100) <span class="text-red-400">↑ lower is better</span></label>
+      <input type="number" [(ngModel)]="input.corruption_risk_index" step="1" min="0" max="100"
+        class="w-full bg-[#22263a] border border-[#2e3350] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#6366f1]"/>
+    </div>
+
+    <!-- Trust -->
+    <div>
+      <label class="text-[#7b82a0] text-xs mb-1 block">Public Trust (0–100) <span class="text-green-400">↑ higher is better</span></label>
+      <input type="number" [(ngModel)]="input.public_trust" step="1" min="0" max="100"
+        class="w-full bg-[#22263a] border border-[#2e3350] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#6366f1]"/>
+    </div>
+
+    <!-- Calculate Button -->
+    <button (click)="calculate()"
+      class="mt-2 w-full py-3 bg-[#6366f1] hover:bg-indigo-500 text-white font-bold rounded-xl transition-all text-sm">
+      ⚡ Calculate Score
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       COLUMNA 2 — Pesos
+  ══════════════════════════════════════════ -->
+  <div class="bg-[#1a1d27] border border-[#2e3350] rounded-2xl p-6 flex flex-col gap-5">
+    <div class="flex items-center justify-between">
+      <h2 class="text-white font-bold text-base">⚖️ Custom Weights</h2>
+      <span class="text-[#7b82a0] text-xs">Must sum 100%</span>
+    </div>
+
+    <!-- Preset selector -->
+    <div>
+      <label class="text-[#7b82a0] text-xs mb-1 block">Preset</label>
+      <select [(ngModel)]="selectedPreset" (ngModelChange)="applyPreset($event)"
+        class="w-full bg-[#22263a] border border-[#2e3350] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#6366f1]">
+        @for (p of presets; track p.name) {
+          <option [value]="p.name">{{ p.name }}</option>
+        }
+        <option value="Custom">Custom</option>
+      </select>
+    </div>
+
+    <!-- Economy -->
+    <div>
+      <div class="flex justify-between mb-1">
+        <label class="text-[#3b82f6] text-sm font-semibold">Economy</label>
+        <span class="text-white font-bold text-sm">{{ weights.economy }}%</span>
+      </div>
+      <input type="range" min="5" max="85" [value]="weights.economy"
+        (input)="adjustWeight('economy', +$any($event.target).value)"
+        class="w-full accent-blue-500"/>
+    </div>
+
+    <!-- Efficiency -->
+    <div>
+      <div class="flex justify-between mb-1">
+        <label class="text-[#8b5cf6] text-sm font-semibold">Efficiency</label>
+        <span class="text-white font-bold text-sm">{{ weights.efficiency }}%</span>
+      </div>
+      <input type="range" min="5" max="85" [value]="weights.efficiency"
+        (input)="adjustWeight('efficiency', +$any($event.target).value)"
+        class="w-full accent-purple-500"/>
+    </div>
+
+    <!-- Transparency -->
+    <div>
+      <div class="flex justify-between mb-1">
+        <label class="text-[#f59e0b] text-sm font-semibold">Transparency</label>
+        <span class="text-white font-bold text-sm">{{ weights.transparency }}%</span>
+      </div>
+      <input type="range" min="5" max="85" [value]="weights.transparency"
+        (input)="adjustWeight('transparency', +$any($event.target).value)"
+        class="w-full accent-yellow-500"/>
+    </div>
+
+    <!-- Trust -->
+    <div>
+      <div class="flex justify-between mb-1">
+        <label class="text-[#22c55e] text-sm font-semibold">Trust</label>
+        <span class="text-white font-bold text-sm">{{ weights.trust }}%</span>
+      </div>
+      <input type="range" min="5" max="85" [value]="weights.trust"
+        (input)="adjustWeight('trust', +$any($event.target).value)"
+        class="w-full accent-green-500"/>
+    </div>
+
+    <!-- Total -->
+    <div class="mt-auto pt-4 border-t border-[#2e3350] flex justify-between items-center">
+      <span class="text-[#7b82a0] text-sm">Total</span>
+      <span class="text-white font-bold text-lg">
+        {{ weights.economy + weights.efficiency + weights.transparency + weights.trust }}%
+      </span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       COLUMNA 3 — Resultado + Simulator
+  ══════════════════════════════════════════ -->
+  <div class="flex flex-col gap-4">
+
+    <!-- Score Result -->
+    @if (result) {
+      <div class="bg-[#1a1d27] border border-[#2e3350] rounded-2xl p-6 fade-in">
+
+        <!-- Score circle + info -->
+        <div class="flex items-center gap-5 mb-5">
+          <div class="w-28 h-28 rounded-full flex flex-col items-center justify-center flex-shrink-0 border-4"
+            [style.borderColor]="classColor(result.classification)"
+            [style.background]="classColor(result.classification) + '15'">
+            <span class="text-4xl font-extrabold" [style.color]="classColor(result.classification)">
+              {{ result.score }}
+            </span>
+            <span class="text-[#7b82a0] text-xs">/100</span>
+          </div>
+          <div>
+            <p class="text-white font-bold text-base mb-1">Government Score</p>
+            <span class="px-3 py-1 rounded-full text-xs font-bold" [class]="classBg(result.classification)">
+              {{ result.classification }}
+            </span>
+            <p class="text-[#7b82a0] text-xs mt-2 leading-relaxed">{{ result.explanation }}</p>
+          </div>
+        </div>
+
+        <!-- Breakdown bars -->
+        <div class="flex flex-col gap-3">
+          @for (item of breakdownEntries(result.breakdown); track item.key) {
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-[#7b82a0]">{{ item.label }}</span>
+                <span class="text-white font-semibold">{{ item.value }}/100</span>
+              </div>
+              <div class="h-2 bg-[#22263a] rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-500"
+                  [style.width.%]="item.value"
+                  [style.background]="barColor(item.key)">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Simulator -->
+      <div class="bg-[#1a1d27] border border-[#2e3350] rounded-2xl overflow-hidden">
+        <button (click)="toggleSimulator()"
+          class="w-full px-6 py-4 flex items-center justify-between text-white font-semibold text-sm hover:bg-[#22263a] transition-all">
+          <span>🔬 What-If Simulator</span>
+          <span class="text-[#7b82a0]">{{ simulatorOpen ? '▲' : '▼' }}</span>
+        </button>
+
+        @if (simulatorOpen && simResult) {
+          <div class="px-6 pb-6 flex flex-col gap-4 fade-in">
+
+            <!-- Delta badge -->
+            <div class="flex items-center justify-center gap-4 py-3 bg-[#22263a] rounded-xl">
+              <div class="text-center">
+                <div class="text-2xl font-extrabold" [style.color]="classColor(result!.classification)">
+                  {{ result!.score }}
+                </div>
+                <div class="text-[#7b82a0] text-xs">Current</div>
+              </div>
+              <div class="text-2xl">→</div>
+              <div class="text-center">
+                <div class="text-2xl font-extrabold" [style.color]="classColor(simResult.classification)">
+                  {{ simResult.score }}
+                </div>
+                <div class="text-[#7b82a0] text-xs">Simulated</div>
+              </div>
+              <div class="text-center">
+                <div class="text-xl font-bold" [style.color]="delta >= 0 ? '#22c55e' : '#ef4444'">
+                  {{ delta >= 0 ? '+' : '' }}{{ delta }}
+                </div>
+                <div class="text-[#7b82a0] text-xs">Delta</div>
+              </div>
+            </div>
+
+            <!-- Sim sliders -->
+            <div class="flex flex-col gap-3">
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-[#7b82a0]">Inflation Rate</span>
+                  <span class="text-white">{{ simInput.inflation_rate }}%</span>
+                </div>
+                <input type="range" min="0" max="30" step="0.5" [(ngModel)]="simInput.inflation_rate"
+                  (input)="simulate()" class="w-full"/>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-[#7b82a0]">Unemployment</span>
+                  <span class="text-white">{{ simInput.unemployment_rate }}%</span>
+                </div>
+                <input type="range" min="0" max="30" step="0.5" [(ngModel)]="simInput.unemployment_rate"
+                  (input)="simulate()" class="w-full"/>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-[#7b82a0]">GDP Growth</span>
+                  <span class="text-white">{{ simInput.gdp_growth }}%</span>
+                </div>
+                <input type="range" min="-5" max="15" step="0.5" [(ngModel)]="simInput.gdp_growth"
+                  (input)="simulate()" class="w-full"/>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-[#7b82a0]">Budget Execution</span>
+                  <span class="text-white">{{ simInput.budget_execution }}%</span>
+                </div>
+                <input type="range" min="0" max="100" step="1" [(ngModel)]="simInput.budget_execution"
+                  (input)="simulate()" class="w-full"/>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-[#7b82a0]">Corruption Risk</span>
+                  <span class="text-white">{{ simInput.corruption_risk_index }}</span>
+                </div>
+                <input type="range" min="0" max="100" step="1" [(ngModel)]="simInput.corruption_risk_index"
+                  (input)="simulate()" class="w-full"/>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-[#7b82a0]">Public Trust</span>
+                  <span class="text-white">{{ simInput.public_trust }}</span>
+                </div>
+                <input type="range" min="0" max="100" step="1" [(ngModel)]="simInput.public_trust"
+                  (input)="simulate()" class="w-full"/>
+              </div>
+            </div>
+
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Empty state -->
+    @if (!result) {
+      <div class="bg-[#1a1d27] border border-[#2e3350] rounded-2xl p-10 flex flex-col items-center justify-center gap-3 text-center">
+        <span class="text-5xl">🏛</span>
+        <p class="text-white font-semibold">No score yet</p>
+        <p class="text-[#7b82a0] text-sm">Enter the indicators and click Calculate Score</p>
+      </div>
+    }
+
+  </div>
+</div>
