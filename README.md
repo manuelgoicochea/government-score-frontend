@@ -1,59 +1,98 @@
-# GovernmentScoreFrontend
+# 🏛️ Government Score API
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.8.
+A REST API that calculates a Government Performance Score (0–100) for Latin American countries using real data from the World Bank, Transparency International, and Latinobarometro.
 
-## Development server
+## 🌎 Live Demo
+👉 [government-score-frontend](https://manuelgoicochea.github.io/government-score-frontend/)
 
-To start a local development server, run:
+## 📊 How the Score Works
 
-```bash
-ng serve
-```
+The score is a weighted index based on 6 indicators:
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+| Indicator | Source | Weight |
+|---|---|---|
+| Inflation Rate | World Bank API | 40% (Economy) |
+| Unemployment Rate | World Bank API | 40% (Economy) |
+| GDP Growth | World Bank API | 40% (Economy) |
+| Budget Execution | CEPAL / National Reports | 20% (Efficiency) |
+| Corruption Risk | Transparency International CPI | 20% (Transparency) |
+| Public Trust | Latinobarometro | 20% (Trust) |
 
-## Code scaffolding
+### Classification
+- ✅ **Good**: 70–100
+- ⚠️ **Moderate**: 40–69
+- ❌ **Critical**: 0–39
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## 🛠️ Tech Stack
 
-```bash
-ng generate component component-name
-```
+- **Framework**: FastAPI (Python 3.12)
+- **Database**: PostgreSQL 16
+- **ORM**: SQLAlchemy 2.0
+- **Containerization**: Docker + Docker Compose
+- **Deployment**: Railway
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## 🚀 Getting Started
 
-```bash
-ng generate --help
-```
+### Prerequisites
+- Docker Desktop
+- Git
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+### Run locally
 
 ```bash
-ng e2e
+git clone https://github.com/manuelgoicochea/government-score-api.git
+cd government-score-api
+cp .env.example .env   # configure your environment variables
+docker compose up --build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Open http://localhost:8000/docs for the interactive API documentation.
 
-## Additional Resources
+### Environment Variables
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Create a `.env` file based on `.env.example`:
+
+```
+DATABASE_URL=postgresql://gov_user:gov_pass@db:5432/gov_score_db
+ADMIN_API_KEY=your-secret-key-here
+APP_ENV=development
+```
+
+### Trigger a data refresh (admin only)
+
+```bash
+curl -X POST http://localhost:8000/api/admin/refresh \
+  -H "X-API-Key: your-secret-key-here"
+```
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| GET | `/api/countries` | Get all country scores | Public |
+| GET | `/api/countries/{code}` | Get score for one country | Public |
+| GET | `/api/countries/last-sync` | Get last synchronization info | Public |
+| POST | `/api/admin/refresh` | Refresh data from external APIs | API Key |
+| GET | `/api/admin/refresh/logs` | Get refresh history | API Key |
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feat/your-feature`)
+3. Commit your changes (`git commit -m 'feat: add your feature'`)
+4. Push to the branch (`git push origin feat/your-feature`)
+5. Open a Pull Request
+
+## 📋 Roadmap
+
+- [ ] Interactive map of Latin America
+- [ ] Historical score tracking per country
+- [ ] Expand to more countries worldwide
+- [ ] Score change alerts
+- [ ] PDF report export
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
