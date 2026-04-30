@@ -27,17 +27,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create production environment file
+      - name: Generate environment files
+        env:
+          API_URL: ${{ secrets.API_URL }}
         run: |
-          cat > src/environments/environment.prod.ts << EOF
-          export const environment = {
-            production: true,
-            apiUrl: '${{ secrets.API_URL }}'
-          };
-          EOF
+          mkdir -p src/environments
+          echo "export const environment = { production: false, apiUrl: 'http://localhost:8000' };" > src/environments/environment.ts
+          echo "export const environment = { production: true, apiUrl: '${API_URL}' };" > src/environments/environment.prod.ts
+          echo "Generated environment.prod.ts with apiUrl: ${API_URL}"
 
       - name: Build Angular (production)
-        run: npm run build -- --configuration production --base-href /government-score-frontend/
+        run: npm run build -- --configuration production
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
