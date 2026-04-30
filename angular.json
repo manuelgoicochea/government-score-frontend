@@ -30,6 +30,8 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/government-score-frontend/",
+              "outputHashing": "all",
               "budgets": [
                 {
                   "type": "initial",
@@ -41,8 +43,7 @@
                   "maximumWarning": "4kB",
                   "maximumError": "8kB"
                 }
-              ],
-              "outputHashing": "all"
+              ]
             },
             "development": {
               "optimization": false,
